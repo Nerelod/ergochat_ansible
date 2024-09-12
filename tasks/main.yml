@@ -1,0 +1,77 @@
+---
+# Installs Required packages for Ergochat as well as Hexchat
+- name: Install required packages
+  apt:
+    name:
+      - wget
+      - tar
+      - hexchat
+    update_cache: yes
+  become: yes
+
+# Downloads the desired release for ergochat from the github release
+- name: Download Ergo binary
+  get_url:
+    url: "https://github.com/ergochat/ergo/releases/download/v{{ ergo_version }}/ergo-{{ ergo_version }}-{{ ergo_arch }}.tar.gz"
+    dest: "/tmp/ergo.tar.gz"
+
+# Creates the dir for ergo in opt
+- name: Create /opt/ergo directory
+  file:
+    path: /opt/ergo
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# Extracts ergo into /opt/ergo    
+- name: Extract Ergo binary
+  unarchive:
+    src: "/tmp/ergo.tar.gz"
+    dest: "/opt/ergo"
+    remote_src: yes
+  notify:
+    - restart ergo
+
+# Copies the config file to the machine and renames it to ircd.yaml
+- name: Copy default.yaml to /ergo-2.13.0-linux-arm64/ircd.yaml
+  copy:
+    src: defaults.yaml
+    dest: /opt/ergo/ergo-2.13.0-linux-arm64/ircd.yaml
+  become: yes  
+
+# Creates TLS certificates for ergo
+- name: Generate certificates with Ergo
+  command: ./ergo mkcerts
+  args:
+    chdir: /opt/ergo/ergo-2.13.0-linux-arm64/
+    creates: /opt/ergo/ergo-2.13.0-linux-arm64/privkey.pem  
+  become: yes
+# Creates a system service for ergo, Runs as root
+- name: Create systemd service file for Ergo
+  copy:
+    dest: /etc/systemd/system/ergo.service
+    content: |
+      [Unit]
+      Description=Ergo IRC Server
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=root
+      WorkingDirectory=/opt/ergo/ergo-2.13.0-linux-arm64/
+      ExecStart=/opt/ergo/ergo-2.13.0-linux-arm64/ergo run
+      Restart=on-failure
+
+      [Install]
+      WantedBy=multi-user.target
+  notify:
+    - restart ergo
+
+# Enables the system service
+- name: Enable Ergo service
+  systemd:
+    name: ergo
+    enabled: yes
+    state: started
+
