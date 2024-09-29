@@ -8,17 +8,6 @@
       - hexchat
     update_cache: yes
   become: yes
-  when: ansible_distribution == 'Debian'
-
-- name: Install required packages - DNF
-  ansible.builtin.dnf:
-    name: 
-      - wget 
-      - tar
-      - hexchat
-    update_cache: yes
-  become: yes
-  when: ansible_system == 'RedHat'
 
 # Downloads the desired release for ergochat from the github release
 - name: Download Ergo binary
@@ -45,18 +34,18 @@
     - restart ergo
 
 # Copies the config file to the machine and renames it to ircd.yaml
-- name: Copy default.yaml to /ergo-2.14.0-linux-arm64/ircd.yaml
+- name: Copy default.yaml to /ergo-2.13.0-linux-arm64/ircd.yaml
   copy:
     src: defaults.yaml
-    dest: /opt/ergo/ergo-2.14.0-linux-arm64/ircd.yaml
+    dest: "/opt/ergo/ergo-{{ ergo_version }}-{{ ergo_arch }}/ircd.yaml"
   become: yes  
 
 # Creates TLS certificates for ergo
 - name: Generate certificates with Ergo
   command: ./ergo mkcerts
   args:
-    chdir: /opt/ergo/ergo-2.14.0-linux-arm64/
-    creates: /opt/ergo/ergo-2.14.0-linux-arm64/privkey.pem  
+    chdir: "/opt/ergo/ergo-{{ ergo_version }}-{{ ergo_arch }}/"
+    creates: "/opt/ergo/ergo-{{ ergo_version }}-{{ ergo_arch }}/privkey.pem"
   become: yes
 # Creates a system service for ergo, Runs as root
 - name: Create systemd service file for Ergo
@@ -70,8 +59,8 @@
       [Service]
       Type=simple
       User=root
-      WorkingDirectory=/opt/ergo/ergo-2.14.0-linux-arm64/
-      ExecStart=/opt/ergo/ergo-2.14.0-linux-arm64/ergo run
+      WorkingDirectory=/opt/ergo/ergo-2.14.0-linux-x86_64/
+      ExecStart=/opt/ergo/ergo-2.14.0-linux-x86_64/ergo run
       Restart=on-failure
 
       [Install]
