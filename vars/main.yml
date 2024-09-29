@@ -1,2 +1,2 @@
-ergo_version: "2.13.0" # Change to the latest version as needed
+ergo_version: "2.14.0" # Change to the latest version as needed
 ergo_arch: "linux-arm64" # Change to match the Raspberry Pi architecture
