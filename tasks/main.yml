@@ -8,6 +8,17 @@
       - hexchat
     update_cache: yes
   become: yes
+  when: ansible_distribution == 'Debian'
+
+- name: Install required packages - DNF
+  ansible.builtin.dnf:
+    name: 
+      - wget 
+      - tar
+      - hexchat
+    update_cache: yes
+  become: yes
+  when: ansible_system == 'RedHat'
 
 # Downloads the desired release for ergochat from the github release
 - name: Download Ergo binary
